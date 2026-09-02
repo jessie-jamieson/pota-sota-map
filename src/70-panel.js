@@ -174,13 +174,18 @@
       '</div>';
   }
 
-  function parkRow(p, center) {
+  function parkRow(p, center, ferInfo) {
     var sub = [];
     var d = distBits(p, center);
     if (d) sub.push('<span class="dist">' + esc(d) + '</span>');
     if (p.loc) sub.push(esc(PSM.locationName(p.loc)));
     if (p.grid) sub.push(esc(p.grid));
     var badges = mylogBadge('pota', p.ref);
+    if (ferInfo && ferInfo.count > 1) {
+      badges += '<span class="badge badge-nfer' + (ferInfo.confirmed ? '' : ' hint') + '"' +
+        (ferInfo.confirmed ? '' : ' title="Possible n-fer: reference points are close. Run “Find multi-activation spots” to confirm the boundaries overlap."') +
+        '>' + esc(ferInfo.count) + '-fer' + (ferInfo.confirmed ? '' : '?') + '</span>';
+    }
     if (p.activations === 0) badges += '<span class="badge badge-new">never activated</span>';
     else if (p.activations != null) badges += '<span class="badge badge-count">' + PSM.fmt.num(p.activations) + ' act</span>';
     if (p.qsos != null && p.qsos > 0) badges += '<span class="badge">' + PSM.fmt.num(p.qsos) + ' Q</span>';
@@ -277,6 +282,7 @@
     var parks = filterParks(state.parks, f);
     var summits = filterSummits(state.summits, f);
     var nfer = state.nfer;
+    var nferParks = state.nferParks || null;
     var zones = (nfer && nfer.zones && nfer.zones.features) || [];
     var combos = (nfer && nfer.summitCombos) || [];
     var comboByCode = new Map();
@@ -288,7 +294,7 @@
 
     if (els.listParks) {
       els.listParks.innerHTML = parks.length
-        ? pagedRows(parks, 'parks', function (p) { return parkRow(p, center); })
+        ? pagedRows(parks, 'parks', function (p) { return parkRow(p, center, nferParks && nferParks.get(p.ref)); })
         : emptyBox(center ? 'No parks here' : 'No search yet',
           center ? (f.potaUnactivated ? 'No never-activated parks in range — clear the filter to see all parks.'
             : 'Try a larger radius or a different location.')

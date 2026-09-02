@@ -1053,6 +1053,85 @@
     return result;
   }
 
+  /* --- e) Per-park n-fer index (map chips + list badges) ------------- */
+  /**
+   * Collapse the overlap picture down to "what does THIS park stack with",
+   * for the map count-chips and the park-list badges.  Two tiers:
+   *
+   *   confirmed — analyze() found the park's OSM boundary actually overlapping
+   *               another reference (a zone), or a summit sitting inside / just
+   *               outside it (a summitCombo).  Authoritative.
+   *   hint      — no confirmed overlap, but another park's *reference point* is
+   *               within `proximityM`.  A cheap "these might be an n-fer" flag
+   *               that needs no Overpass call — but adjacency is not overlap, so
+   *               it is always reported unconfirmed (the UI marks it "?").
+   *
+   * A confirmed fact always wins over a hint for the same park.  The park's
+   * count is the largest simultaneous stack it takes part in (an honest lower
+   * bound: we never merge a park-overlap and a summit-combo into one bigger
+   * number unless the geometry actually put them in the same zone).
+   *
+   * @param {Array<Park>} parks
+   * @param {Object|null} nferResult   the result of analyze(), or null
+   * @param {Object} [opts] {proximityM=500, maxCluster=6}
+   * @returns {Map<string,{count:number, confirmed:boolean, partners:string[]}>}
+   *          keyed by POTA reference; only parks that stack with something appear.
+   */
+  function parkNferIndex(parks, nferResult, opts) {
+    opts = opts || {};
+    const proximityM = opts.proximityM == null ? 500 : opts.proximityM;
+    const maxCluster = opts.maxCluster == null ? 6 : opts.maxCluster;
+    const list = (parks || []).filter((p) => p && p.ref && isFinite(p.lat) && isFinite(p.lon));
+    const index = new Map();
+
+    /** Create or upgrade one park's entry; confirmed beats hint, never the reverse. */
+    function bump(ref, count, confirmed, partners) {
+      if (!ref || !(count > 1)) return;
+      let e = index.get(ref);
+      if (!e) { e = { count: 0, confirmed: false, partners: [] }; index.set(ref, e); }
+      if (confirmed && !e.confirmed) { e.confirmed = true; e.count = 0; e.partners = []; }
+      if (!confirmed && e.confirmed) return;          // keep the confirmed picture
+      if (count > e.count) e.count = count;
+      const seen = new Set(e.partners);
+      (partners || []).forEach((r) => { if (r && !seen.has(r)) { seen.add(r); e.partners.push(r); } });
+    }
+
+    /* confirmed: park×park (and trail×park) overlap zones */
+    const zones = (nferResult && nferResult.zones && nferResult.zones.features) || [];
+    zones.forEach((z) => {
+      const refs = (z.properties && z.properties.refs) || [];
+      if (refs.length < 2) return;
+      refs.forEach((ref) => bump(ref, refs.length, true, refs.filter((r) => r !== ref)));
+    });
+
+    /* confirmed: summit-in-park combos — the summit is one of the "fer" */
+    const combos = (nferResult && nferResult.summitCombos) || [];
+    combos.forEach((c) => {
+      const refs = (c && c.refs) || [];
+      if (!refs.length) return;
+      const count = refs.length + 1;                  // + the summit itself
+      refs.forEach((ref) => bump(ref, count, true,
+        refs.filter((r) => r !== ref).concat(c.code ? [c.code] : [])));
+    });
+
+    /* hint: reference points sitting within proximityM of each other */
+    if (proximityM > 0 && list.length > 1) {
+      const km = proximityM / 1000;
+      for (let i = 0; i < list.length; i++) {
+        const a = list[i];
+        const near = [];
+        for (let j = 0; j < list.length && near.length < maxCluster - 1; j++) {
+          if (j === i) continue;
+          const b = list[j];
+          if (PSM.haversineKm(a.lat, a.lon, b.lat, b.lon) <= km) near.push(b.ref);
+        }
+        if (near.length) bump(a.ref, near.length + 1, false, near);
+      }
+    }
+
+    return index;
+  }
+
   /* ------------------------------------------------------------------ */
   PSM.nfer = {
     buildOverpassQuery: buildOverpassQuery, fetchBoundaries: fetchBoundaries,
@@ -1060,6 +1139,8 @@
     // Single-park boundary (the detail panel's highlight).
     buildParkQuery: buildParkQuery, parkBoundary: parkBoundary,
     boundaryFromAnalysis: boundaryFromAnalysis,
+    // Per-park stacking index for the map chips + list badges.
+    parkNferIndex: parkNferIndex,
     // Low-level helpers, exported for the tests and for other modules that need
     // to read OSM tags / normalise POTA refs exactly the way we do.
     _normRef: normRef, _refsFromTag: refsFromTag, _featTags: featTags,

@@ -68,6 +68,7 @@
   var baseKey = 'osm';
   var layers = {};             // parks, summits, zones, boundaries, spots, center
   var parkMarkers = new Map(); // ref -> marker
+  var nferParks = new Map();    // ref -> {count, confirmed, partners} (set by renderParks)
   var summitMarkers = new Map();
   var parkByRef = new Map();
   var summitByCode = new Map();
@@ -174,6 +175,14 @@
     else if (p.activations != null) meta.push(PSM.fmt.num(p.activations) + ' activations');
     if (meta.length) bits.push('<div class="p-meta">' + meta.join(' · ') + '</div>');
     if (mylogState('pota', p.ref) === 'mine') bits.push('<div class="p-meta p-mine">✓ activated by you</div>');
+    var fer = nferParks.get(p.ref);
+    if (fer && fer.count > 1) {
+      var lbl = (fer.confirmed ? '' : 'possible ') + fer.count + '-fer';
+      var partners = (fer.partners || []).slice(0, 4).join(', ');
+      bits.push('<div class="p-meta p-nfer">' + esc(lbl) +
+        (partners ? ' · stacks with ' + esc(partners) : '') +
+        (fer.confirmed ? '' : ' (reference points are close — run analysis to confirm)') + '</div>');
+    }
     bits.push('<a class="p-details" href="#">Details</a>');
     return popupEl('park', bits.join(''), 'park', p.ref);
   }
@@ -442,9 +451,25 @@
     return function () { return true; };
   }
 
+  /**
+   * A small purple count-chip beside an n-fer park's dot (a permanent tooltip,
+   * so it rides the dot through clustering and pans).  Confirmed overlaps are a
+   * solid chip; a proximity-only guess is a hollow chip the CSS marks "?".
+   */
+  function bindNferChip(m, info) {
+    if (!m || !info || !(info.count > 1) || typeof m.bindTooltip !== 'function') return;
+    var cls = 'psm-nfer-chip ' + (info.confirmed ? 'confirmed' : 'hint') + (info.count >= 3 ? ' deep' : '');
+    try {
+      m.bindTooltip(String(info.count), {
+        permanent: true, direction: 'right', offset: [7, -9], className: cls, opacity: 1
+      });
+    } catch (e) { /* tooltips unsupported — the plain dot still shows */ }
+  }
+
   api.renderParks = function (parks, opts) {
     if (!map) return;
     opts = opts || {};
+    nferParks = opts.nferParks || new Map();
     var keep = makeFilter(opts.filter);
     layers.parks.clearLayers();
     parkMarkers.clear();
@@ -457,6 +482,7 @@
       var m = L.circleMarker([p.lat, p.lon], parkStyle(p, selected.kind === 'park' && selected.id === p.ref));
       m.psmKind = 'park'; m.psmId = p.ref;
       m.bindPopup(function () { return parkPopup(p); }, { autoPanPadding: [24, 24] });
+      bindNferChip(m, nferParks.get(p.ref));
       parkMarkers.set(p.ref, m);
       batch.push(m);
     });

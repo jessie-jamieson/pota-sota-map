@@ -24,6 +24,7 @@
     parks: [],
     summits: [],
     nfer: null,
+    nferParks: null,     // Map<ref,{count,confirmed,partners}> — rebuilt every renderAll()
     spots: null,
     filters: { potaUnactivated: false, sotaMinPoints: 0, mine: 'all' },
     sources: { pota: null, sota: null }
@@ -132,10 +133,16 @@
   function summitFilter() { return { minPoints: Number(state.filters.sotaMinPoints) || 0, mine: state.filters.mine }; }
 
   function renderAll() {
+    // Which references stack together — feeds the map count-chips and the list
+    // badges.  Confirmed overlaps come from a finished analysis; a proximity
+    // hint (reference points <500 m apart) fills in before one has run.
+    state.nferParks = (PSM.nfer && PSM.nfer.parkNferIndex)
+      ? PSM.nfer.parkNferIndex(state.parks, state.nfer, { proximityM: 500 })
+      : null;
     if (panel()) panel().renderLists(state);
     var m = mapui();
     if (!m || !m.getMap || !m.getMap()) return;
-    m.renderParks(state.parks, { filter: parkFilter() });
+    m.renderParks(state.parks, { filter: parkFilter(), nferParks: state.nferParks });
     m.renderSummits(state.summits, { filter: summitFilter() });
     if (state.nfer) m.renderZones(state.nfer);
     if (state.spots) m.renderSpots(state.spots, { parks: state.parks, summits: state.summits });
@@ -489,9 +496,11 @@
         return;
       }
       state.nfer = r.value;
-      var m = mapui();
-      if (m && m.getMap && m.getMap()) m.renderZones(r.value);
-      if (panel()) { panel().renderLists(state); panel().selectTab('multi'); }
+      // Rebuild everything together: the stacking index now has confirmed
+      // overlaps, so park chips/badges upgrade from proximity hints, and the
+      // zones + lists redraw in step. (renderAll draws the zones when nfer set.)
+      renderAll();
+      if (panel()) panel().selectTab('multi');
       var st = r.value.stats || {};
       var zones = (r.value.zones && r.value.zones.features.length) || 0;
       var combos = (r.value.summitCombos && r.value.summitCombos.length) || 0;

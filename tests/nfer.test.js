@@ -475,6 +475,49 @@ const tagsOf = (f) => (f.properties && f.properties.tags) || f.properties || {};
       String(c.distM).padStart(4) + ' m  ' + c.refs.join(' + ') + '   ' + (c.name || ''));
   });
 
+  /* ---- parkNferIndex: per-park stacking (confirmed + proximity hint) ---- */
+  section('parkNferIndex');
+  {
+    // Four parks: A&B truly overlap (a confirmed zone); C&D only sit ~120 m
+    // apart (a proximity hint); E stands alone.
+    const parks = [
+      { ref: 'US-0001', name: 'A', lat: 40.0000, lon: -74.0000 },
+      { ref: 'US-0002', name: 'B', lat: 40.0003, lon: -74.0003 },
+      { ref: 'US-0003', name: 'C', lat: 41.0000, lon: -75.0000 },
+      { ref: 'US-0004', name: 'D', lat: 41.0008, lon: -75.0008 }, // ~110 m from C
+      { ref: 'US-0005', name: 'E', lat: 42.0000, lon: -76.0000 }
+    ];
+    const nferResult = {
+      zones: { type: 'FeatureCollection', features: [
+        { type: 'Feature', properties: { refs: ['US-0001', 'US-0002'], count: 2 } }
+      ] },
+      summitCombos: [ { code: 'W2/AA-001', refs: ['US-0001'] } ]
+    };
+    const idx = nfer.parkNferIndex(parks, nferResult, { proximityM: 500 });
+
+    ok(idx.get('US-0001') && idx.get('US-0001').confirmed === true,
+      'overlapping park is confirmed');
+    ok(idx.get('US-0001').partners.indexOf('US-0002') > -1 &&
+       idx.get('US-0001').partners.indexOf('W2/AA-001') > -1,
+      'confirmed park lists both its park partner and the summit combo');
+    ok(idx.get('US-0002') && idx.get('US-0002').count === 2, 'the other overlap park is a 2-fer');
+    ok(idx.get('US-0003') && idx.get('US-0003').confirmed === false && idx.get('US-0003').count === 2,
+      'nearby-but-unanalysed park is an unconfirmed 2-fer hint');
+    ok(!idx.has('US-0005'), 'the isolated park gets no entry');
+
+    // A confirmed fact must never be downgraded by a later proximity hint.
+    const nearBoth = parks.concat([{ ref: 'US-0006', name: 'F', lat: 40.0001, lon: -74.0001 }]);
+    const idx2 = nfer.parkNferIndex(nearBoth, nferResult, { proximityM: 500 });
+    ok(idx2.get('US-0001').confirmed === true, 'confirmed park stays confirmed despite a close neighbour');
+
+    // No analysis at all → proximity hints only, never confirmed.
+    const idx3 = nfer.parkNferIndex(parks, null, { proximityM: 500 });
+    ok(idx3.get('US-0003') && idx3.get('US-0003').confirmed === false,
+      'with no analysis, close parks are hints only');
+    ok(!idx3.has('US-0001') === false && idx3.get('US-0001').confirmed === false,
+      'without analysis even a truly-overlapping pair is only a hint');
+  }
+
   /* ---------------------------------------------------------------- */
   console.log('\n' + (failures.length ? 'FAILED' : 'PASSED') +
     ': ' + passed + ' assertions passed, ' + failures.length + ' failed');

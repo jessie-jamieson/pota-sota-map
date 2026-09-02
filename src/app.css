@@ -612,6 +612,24 @@ select { padding: 6px 6px; cursor: pointer; }
 .badge-pts { background: var(--sota-soft); color: var(--sota-dark); }
 .badge-count { background: var(--pota-soft); color: var(--pota-dark); }
 .badge-nfer { background: var(--nfer-soft); color: var(--nfer); }
+/* Unconfirmed (proximity-only) n-fer: hollow, so a guess never looks like a fact. */
+.badge-nfer.hint { background: transparent; color: var(--nfer);
+  border: 1px solid color-mix(in srgb, var(--nfer) 45%, transparent); }
+
+/* The count-chip beside an n-fer park's map dot (a permanent Leaflet tooltip). */
+.leaflet-tooltip.psm-nfer-chip {
+  background: var(--nfer); color: #fff; border: none; border-radius: 9px;
+  padding: 0 5px; min-width: 15px; height: 16px; line-height: 16px;
+  font-size: 11px; font-weight: 700; text-align: center; white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .45); pointer-events: none;
+}
+.leaflet-tooltip.psm-nfer-chip.deep { background: var(--nfer-deep); }
+.leaflet-tooltip.psm-nfer-chip.hint {
+  background: var(--surface); color: var(--nfer); border: 1.5px solid var(--nfer);
+}
+.leaflet-tooltip.psm-nfer-chip.hint.deep { color: var(--nfer-deep); border-color: var(--nfer-deep); }
+.leaflet-tooltip.psm-nfer-chip::before { display: none; }   /* no tooltip arrow */
+.p-nfer { color: var(--nfer); font-weight: 600; }
 .badge-mine { background: var(--mine-soft); color: var(--mine-dark); }
 .badge-attempted { background: var(--surface-3); color: var(--mine-dark); border: 1px dashed var(--mine); line-height: 1.35; }
 .badge-hunted { background: var(--surface-3); color: var(--ink-2); }
