@@ -1,0 +1,5 @@
+tests/out/
+dev/smoke-*.png
+.snapshot-cache/
+data/snapshot.js
+__pycache__/

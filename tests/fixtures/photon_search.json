@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [-74.1783, 41.1753]}, "properties": {"osm_type": "R", "osm_id": 1, "osm_key": "leisure", "osm_value": "park", "name": "Harriman State Park", "state": "New York", "county": "Rockland County", "country": "United States", "countrycode": "US", "type": "other"}}]}

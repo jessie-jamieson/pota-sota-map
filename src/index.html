@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b5e20">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Find Parks on the Air (POTA) parks and Summits on the Air (SOTA) summits near an address, coordinate, Maidenhead grid or reference — with details, live spots and multi-activation (n-fer) zones.">
+<title>POTA + SOTA Near Me</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/7.4.0/turf.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/osmtogeojson@3.0.0-beta.5/osmtogeojson.js" crossorigin="anonymous"></script>
+
+<!-- Optional offline snapshot of the POTA/SOTA lists. Absent by design in most builds; the
+     onerror handler is the one inline handler in this file so a missing file stays silent. -->
+<script src="data/snapshot.js" onerror="window.PSM_SNAPSHOT_MISSING=true"></script>
+
+<style>
+<!-- BUILD:CSS -->
+</style>
+<!-- DEV-ONLY:BEGIN — stripped by scripts/build.py; lets src/index.html run straight from src/ -->
+<link rel="stylesheet" href="app.css">
+<!-- DEV-ONLY:END -->
+</head>
+<body class="psm">
+
+<div id="app">
+
+  <aside id="sidebar" aria-label="Search and results">
+    <div class="sheet-grip" id="sheet-grip" role="separator" aria-label="Resize panel" aria-orientation="horizontal" tabindex="0"><span></span></div>
+
+    <header class="side-header">
+      <div class="brand">
+        <h1>POTA + SOTA Near Me</h1>
+        <p class="subtitle">Parks on the Air · Summits on the Air</p>
+      </div>
+      <button id="sidebar-toggle" type="button" class="icon-btn ghost" aria-pressed="false" aria-controls="sidebar" aria-label="Collapse panel" title="Collapse panel"><span class="glyph" aria-hidden="true">❮</span></button>
+    </header>
+
+    <div class="sidebar-main">
+      <div class="sidebar-scroll" id="sidebar-scroll">
+
+        <div class="controls">
+
+          <div class="row search-row">
+            <label class="sr-only" for="search-input">Search for a place, coordinate, grid square or reference</label>
+            <input id="search-input" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
+                   placeholder="Address, lat,lon, grid (FN21ve), US-2069 or W2/GC-001">
+            <button id="search-btn" type="button" class="btn primary">Search</button>
+            <button id="locate-btn" type="button" class="icon-btn" aria-label="Use my location" title="Use my location"><span class="glyph" aria-hidden="true">⌖</span></button>
+          </div>
+
+          <div class="row radius-row">
+            <label for="radius-range">Radius</label>
+            <input id="radius-range" type="range" min="1" max="100" step="1" value="25" aria-describedby="radius-value">
+            <span id="radius-value" class="radius-value">25 mi</span>
+            <button id="units-toggle" type="button" class="btn small" aria-pressed="false" aria-label="Distance units: miles. Switch to kilometres." title="Switch miles / kilometres">mi</button>
+          </div>
+
+          <fieldset class="row layers-row">
+            <legend>Layers</legend>
+            <div class="checks">
+              <label class="check" for="toggle-pota"><input type="checkbox" id="toggle-pota" checked><span class="swatch swatch-pota" aria-hidden="true"></span><span class="check-label">Parks</span></label>
+              <label class="check" for="toggle-sota"><input type="checkbox" id="toggle-sota" checked><span class="swatch swatch-sota" aria-hidden="true"></span><span class="check-label">Summits</span></label>
+              <label class="check" for="toggle-spots"><input type="checkbox" id="toggle-spots"><span class="swatch swatch-spot" aria-hidden="true"></span><span class="check-label">Live spots</span></label>
+              <label class="check" for="toggle-boundaries"><input type="checkbox" id="toggle-boundaries" checked><span class="swatch swatch-bound" aria-hidden="true"></span><span class="check-label">Boundaries</span></label>
+            </div>
+            <div class="basemap">
+              <label for="basemap-select">Basemap</label>
+              <select id="basemap-select">
+                <option value="osm">OpenStreetMap</option>
+                <option value="topo">OpenTopoMap</option>
+                <option value="usgs">USGS Topo</option>
+                <option value="esri">Esri Imagery</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <fieldset class="row filters-row">
+            <legend>Filters</legend>
+            <label class="check" for="filter-pota-unactivated"><input type="checkbox" id="filter-pota-unactivated"><span class="check-label">Never-activated parks only</span></label>
+            <div class="filter-points">
+              <label for="filter-sota-points">Summit points</label>
+              <select id="filter-sota-points">
+                <option value="0">Any</option>
+                <option value="1">1+</option>
+                <option value="2">2+</option>
+                <option value="4">4+</option>
+                <option value="6">6+</option>
+                <option value="8">8+</option>
+                <option value="10">10</option>
+              </select>
+            </div>
+            <div class="filter-mine">
+              <label for="filter-mine">Mine</label>
+              <select id="filter-mine">
+                <option value="all">All</option>
+                <option value="new">Not yet activated by me</option>
+                <option value="mine">Activated by me</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <details id="mylog-section" class="mylog-section">
+            <summary>My activations</summary>
+            <div id="mylog-summary" class="mylog-summary">Nothing marked yet</div>
+            <label class="mylog-file-label" for="mylog-file">Import log (ADIF, POTA park-list CSV, SOTA CSV, JSON)</label>
+            <input type="file" id="mylog-file" accept=".adi,.adif,.csv,.txt,.json">
+            <label class="sr-only" for="mylog-paste">Or paste references, ADIF or CSV text</label>
+            <textarea id="mylog-paste" rows="3" placeholder="…or paste references / ADIF / CSV text"></textarea>
+            <div class="mylog-actions">
+              <button id="mylog-import-btn" type="button" class="btn small">Import</button>
+              <button id="mylog-export-btn" type="button" class="btn small">Export JSON</button>
+              <button id="mylog-clear-btn" type="button" class="btn small mylog-clear">Clear</button>
+            </div>
+          </details>
+
+          <div class="row action-row">
+            <button id="nfer-btn" type="button" class="btn nfer">Find multi-activation spots</button>
+            <span class="help-tip" tabindex="0" role="note"
+                  aria-label="Multi-activation spots: analyses OpenStreetMap park boundaries inside the search radius to find places where two or more references overlap. The analysis radius is capped at 25 mi / 40 km and takes 10–60 seconds."
+                  title="Analyses OpenStreetMap park boundaries inside the search radius (capped at 25 mi / 40 km).">
+              <span class="glyph" aria-hidden="true">?</span>
+              <span class="help-bubble" aria-hidden="true">Analyses OpenStreetMap park boundaries inside the search radius to find spots where two or more references overlap. Capped at 25&nbsp;mi / 40&nbsp;km; takes 10–60&nbsp;s.</span>
+            </span>
+          </div>
+
+        </div>
+
+        <div class="tabbar">
+          <div class="tabs" role="tablist" aria-label="Results">
+            <button id="tab-parks" type="button" class="tab" role="tab" aria-selected="true" aria-controls="list-parks">Parks (0)</button>
+            <button id="tab-summits" type="button" class="tab" role="tab" aria-selected="false" aria-controls="list-summits">Summits (0)</button>
+            <button id="tab-multi" type="button" class="tab" role="tab" aria-selected="false" aria-controls="list-multi">Multi (0)</button>
+          </div>
+          <!-- The bar is sticky, so this keeps the search box one tap away however far the
+               user has scrolled down a long result list on a phone. -->
+          <button id="to-search" type="button" class="btn tiny to-search" title="Back to the search box">
+            <span class="glyph" aria-hidden="true">⌕</span> Search
+          </button>
+        </div>
+
+        <div class="lists">
+          <div id="list-parks" class="list" role="tabpanel" aria-labelledby="tab-parks" tabindex="0"></div>
+          <div id="list-summits" class="list" role="tabpanel" aria-labelledby="tab-summits" tabindex="0" hidden></div>
+          <div id="list-multi" class="list" role="tabpanel" aria-labelledby="tab-multi" tabindex="0" hidden></div>
+        </div>
+
+      </div><!-- /.sidebar-scroll -->
+
+      <section id="detail" class="detail" aria-label="Details" hidden>
+        <div class="detail-head">
+          <h2 id="detail-title">Details</h2>
+          <button id="detail-close" type="button" class="icon-btn ghost" aria-label="Close details" title="Close details"><span class="glyph" aria-hidden="true">✕</span></button>
+        </div>
+        <div id="detail-body" class="detail-body"></div>
+      </section>
+
+    </div><!-- /.sidebar-main -->
+
+    <footer class="side-footer">
+      <div id="status" class="status" role="status" aria-live="polite">Starting…</div>
+      <div class="footer-row">
+        <button id="log-toggle" type="button" class="btn tiny" aria-expanded="false" aria-controls="log" aria-pressed="false">Log</button>
+        <p class="attrib">
+          Map data ©&nbsp;<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors ·
+          <a href="https://pota.app/" target="_blank" rel="noopener noreferrer">POTA</a> ·
+          <a href="https://www.sota.org.uk/" target="_blank" rel="noopener noreferrer">SOTA</a> ·
+          geocoding by <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">Photon</a>/<a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">Nominatim</a>
+        </p>
+      </div>
+      <div id="log" class="log" hidden aria-label="Activity log"></div>
+    </footer>
+  </aside>
+
+  <div id="map-wrap">
+    <div id="map"></div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+<!-- BUILD:JS -->
+</script>
+<!-- DEV-ONLY:BEGIN — stripped by scripts/build.py; keep this list in filename order -->
+<script src="00-util.js"></script>
+<script src="10-geocode.js"></script>
+<script src="20-pota.js"></script>
+<script src="30-sota.js"></script>
+<script src="40-nfer.js"></script>
+<script src="50-spots.js"></script>
+<script src="60-map.js"></script>
+<script src="70-panel.js"></script>
+<script src="90-app.js"></script>
+<!-- DEV-ONLY:END -->
+</body>
+</html>

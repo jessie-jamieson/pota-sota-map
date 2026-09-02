@@ -1,0 +1,108 @@
+<!doctype html>
+<!--
+  tests/standin.html — minimal stand-in for pota-sota-map.html, used ONLY to prove the offline
+  test harness (tests/mock-network.js + tests/e2e.js) works end-to-end before the real app exists.
+
+  It intentionally mirrors the real app's external footprint:
+    - the exact same CDN <link>/<script> tags the real app loads (see ARCHITECTURE.md "Runtime
+      facts" and the ENVIRONMENT FACTS block in the harness task), so CDN routing is exercised
+      for every library, not just Leaflet;
+    - a real Leaflet map bound to #map with a tile layer, a marker (via markercluster) and a
+      layers control, so tile mocking and the CDN image files (marker-icon*.png, layers*.png)
+      are exercised too;
+    - a handful of real fetch() calls against mocked POTA/SOTA/geocoder/Overpass URLs, proving
+      routing/mocking works for XHR-style calls the same way PSM.fetchJSON will use it;
+    - the one UI contract hook the "loads" scenario checks: window.PSM (truthy) and
+      document.body gets class "psm-ready" once the above settles.
+
+  Run: NODE_PATH=/home/claude/.npm-global/lib/node_modules node tests/e2e.js --app tests/standin.html --only loads
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>PSM test harness stand-in</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
+<style>
+  html, body { margin: 0; height: 100%; }
+  #map { position: absolute; inset: 0; }
+  #status { position: absolute; z-index: 1000; top: 8px; left: 8px; background: #fff; padding: 4px 8px;
+            font: 12px/1.4 sans-serif; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="status">loading&hellip;</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/7.4.0/turf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/osmtogeojson@3.0.0-beta.5/osmtogeojson.js"></script>
+<script>
+(async function () {
+  'use strict';
+  window.PSM = window.PSM || {};
+  PSM.standin = true;
+  PSM.app = { state: {}, ready: null };
+
+  // --- a real Leaflet map, same as the real app will build in 60-map.js --------------------
+  const map = L.map('map', { attributionControl: false }).setView([41.24, -74.10], 9);
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+  L.control.layers({ 'OpenStreetMap': osm }).addTo(map);
+
+  const cluster = L.markerClusterGroup();
+  cluster.addLayer(L.marker([41.1753, -74.1783]).bindPopup('Harriman State Park (standin marker)'));
+  map.addLayer(cluster);
+
+  PSM.standinLibsLoaded = {
+    leaflet: typeof L === 'object' && !!L.version,
+    markercluster: typeof L.MarkerClusterGroup === 'function',
+    turf: typeof turf === 'object' && typeof turf.distance === 'function',
+    osmtogeojson: typeof osmtogeojson === 'function'
+  };
+
+  // --- exercise a handful of mocked network routes end-to-end via real fetch() -------------
+  const results = {};
+  async function tryFetch(key, url, opts) {
+    try {
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      results[key] = { ok: res.ok, status: res.status, bytes: text.length };
+    } catch (e) {
+      results[key] = { ok: false, error: String(e && e.message || e) };
+    }
+  }
+  await Promise.all([
+    tryFetch('potaStateList', 'https://api.pota.app/location/parks/US-NY'),
+    tryFetch('potaParkDetail', 'https://api.pota.app/park/US-2069'),
+    tryFetch('sotaAssociations', 'https://api2.sota.org.uk/api/associations'),
+    tryFetch('photonSearch', 'https://photon.komoot.io/api/?q=Harriman&limit=5'),
+    tryFetch('overpass', 'https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent('[out:json][timeout:25];out;')
+    })
+  ]);
+  PSM.standinFetchResults = results;
+
+  const statusEl = document.getElementById('status');
+  function renderStatus() {
+    const libsOk = Object.values(PSM.standinLibsLoaded).every(Boolean);
+    const fetchesOk = Object.values(results).every((r) => r.ok);
+    statusEl.textContent = 'libs ' + (libsOk ? 'OK' : 'FAIL') + ' / fetches ' + (fetchesOk ? 'OK' : 'FAIL');
+  }
+
+  function markReady() {
+    renderStatus();
+    PSM.app.ready = Promise.resolve();
+    document.body.classList.add('psm-ready');
+  }
+  if (map._loaded) markReady(); else map.whenReady(markReady);
+})();
+</script>
+</body>
+</html>

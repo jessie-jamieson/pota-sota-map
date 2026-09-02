@@ -1,0 +1,33 @@
+﻿reference,name,active,entityId,locationDesc,latitude,longitude,grid
+US-0001,Acadia National Park,1,291,US-ME,44.31,-68.2034,FN54vh
+US-0002,Baxter State Park,1,291,US-ME,45.9036,-68.9611,FN55mv
+US-0003,White Mountain National Forest,1,291,US-NH,44.1,-71.4,FN44hc
+US-0004,Green Mountain National Forest,1,291,US-VT,43.8,-72.8,FN33ot
+US-0005,Shenandoah National Park,1,291,US-VA,38.5325,-78.4326,FM08sm
+US-0006,Great Smoky Mountains National Park,1,291,US-TN,35.6118,-83.4895,EM85go
+US-0007,Everglades National Park,1,291,US-FL,25.2866,-80.8987,EL95ng
+US-0008,Yellowstone National Park,1,291,US-WY,44.428,-110.5885,DN44qk
+US-0009,Yosemite National Park,1,291,US-CA,37.8651,-119.5383,DM07fu
+US-0010,Joshua Tree National Park,1,291,US-CA,33.8734,-115.901,DM23bu
+US-0011,Mount Rainier National Park,1,291,US-WA,46.8523,-121.7603,CN96cu
+US-0012,Grand Canyon National Park,1,291,US-AZ,36.1069,-112.1129,DM36wc
+US-0013,Big Bend National Park,1,291,US-TX,29.1275,-103.2425,DL89jd
+US-0014,Voyageurs National Park,1,291,US-MN,48.4839,-92.8386,EN38nl
+US-0015,Isle Royale National Park,1,291,US-MI,48.0059,-88.5511,EN58ra
+US-0016,"Joe ""Trapper"" Smith Memorial Park",1,291,US-CO,39.5501,-105.7821,DM79cn
+US-0017,"Cape Hatteras National Seashore, Outer Banks",1,291,US-NC,35.2582,-75.5277,FM25fg
+US-0018,Congaree National Park,0,291,US-SC,33.7948,-80.7821,EM93ot
+US-0019,Old Rag Wilderness Area,0,291,US-VA,38.5658,-78.2836,FM08un
+US-0020,Custer State Park,1,291,US-SD,43.7595,-103.3413,DN83hs
+US-0022,Custer National Forest,1,291,US-MT,45.6,-106.5,DN65so
+US-0023,Badlands National Park,1,291,US-SD,43.8554,-102.3397,DN83tu
+US-0024,Denali National Park,1,291,US-AK,63.1148,-151.1926,BP43jc
+US-0025,Haleakala National Park,1,291,US-HI,20.7204,-156.1552,BL10wr
+VE-0001,Banff National Park,1,1,VE-AB,51.4968,-115.9281,DO21al
+VE-0002,Algonquin Provincial Park,1,1,VE-ON,45.5259,-78.3639,FN05tm
+VE-0003,Gros Morne National Park,1,1,VE-NL,49.6009,-57.7554,GN19co
+GB-0001,Peak District National Park,1,223,,53.3403,-1.8154,IO93ci
+GB-0002,Snowdonia National Park,1,223,,52.9147,-3.9142,IO82bv
+GB-0003,Cairngorms National Park,1,223,,57.079,-3.6294,IO87eb
+US-0021,Glitchy Test Park,1,291,US-ZZ,notalat,-105.0,DN70xx
+US-0001,"Acadia NP (duplicate, should be ignored)",1,291,US-ME,44.31,-68.2034,FN54vh

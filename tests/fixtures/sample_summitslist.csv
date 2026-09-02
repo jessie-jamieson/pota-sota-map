@@ -1,0 +1,22 @@
+SOTA Summits List (Date=31/08/2026)
+SummitCode,AssociationName,RegionName,SummitName,AltM,AltFt,GridRef1,GridRef2,Longitude,Latitude,Points,BonusPoints,ValidFrom,ValidTo,ActivationCount,ActivationDate,ActivationCall
+W2/GC-001,USA - NJ / NY,Greater Catskills,Slide Mountain,1172,3845,,,-74.3862,41.9991,10,3,01/05/2010,31/12/2099,0,,
+W2/NJ-001,USA - NJ / NY,North Jersey,High Point Monument,550,1804,,,-74.6624,41.3212,6,3,01/05/2010,31/12/2099,12,15/06/2026,K2ABC
+W1/HA-001,USA - New Hampshire,White Mountains,Mount Washington,1917,6289,,,-71.3033,44.2706,8,3,01/05/2010,31/12/2099,45,20/07/2026,W1XYZ
+W1/HA-002,USA - New Hampshire,White Mountains,Mount Adams,1760,5774,,,-71.2814,44.3196,8,3,01/05/2010,31/12/2099,0,,
+W1/HA-003,USA - New Hampshire,White Mountains,Mount Jefferson,1751,5744,,,-71.3197,44.2739,8,3,01/05/2010,31/12/2099,3,02/05/2026,N1QRP
+W1/CN-001,USA - Connecticut,Connecticut Hills,Bear Mountain,724,2375,,,-73.474,42.045,4,0,01/05/2010,31/12/2099,0,,
+W6/CT-001,USA - California,Central Sierra,Mount Diablo,1173,3848,,,-121.9142,37.8817,6,3,01/05/2010,31/12/2099,9,11/03/2026,K6ABC
+W6/SD-001,USA - California,San Diego,Cuyamaca Peak,1988,6522,,,-116.59,32.9364,4,0,01/05/2010,31/12/2099,,,
+W7I/SI-001,USA - Idaho,Southern Idaho,Bogus Basin,2319,7608,,,-116.0956,43.7614,4,3,01/05/2010,31/12/2099,0,,
+W7I/SC-001,USA - Idaho,South Central Idaho,Kelly Mountain,2748,9016,,,-114.3125,43.6069,6,3,01/05/2010,31/12/2099,2,30/08/2026,W7QRP
+W7A/SC-001,USA - Arizona,Southern Arizona,Mount Lemmon,2792,9160,,,-110.7889,32.4431,6,3,01/05/2010,31/12/2099,0,,
+W7O/CN-001,USA - Oregon,Cascade North,Mount Hood,3429,11249,,,-121.6959,45.3736,10,3,01/05/2010,31/12/2099,60,04/07/2026,W7XYZ
+W0/CO-001,USA - Colorado,Front Range,Mount Evans,4348,14264,,,-105.6438,39.5883,10,3,01/05/2010,31/12/2099,30,19/06/2026,K0PARK
+W3/SH-001,USA - Eastern PA,South Central PA,Blue Knob,777,2549,,,-78.5722,40.2856,2,0,01/05/2010,31/12/2099,0,,
+W4/CM-001,USA - North Carolina,Blue Ridge,Mount Mitchell,2037,6684,,,-82.2652,35.7648,10,3,01/05/2010,31/12/2099,15,22/09/2026,W4ABC
+W5/OK-001,USA - Oklahoma,Ouachita,Rich Mountain,839,2753,,,-94.59,34.6767,2,0,01/05/2010,31/12/2099,0,,
+VE2/QC-001,Canada - Quebec,Laurentides,Mont Bélair,480,1575,,,-73.43,45.5333,2,0,01/05/2010,31/12/2099,5,14/06/2026,VE2XYZ
+GM/SS-001,Scotland,Southern Scotland,Ben Nevis,1345,4413,,,-5.0037,56.7969,10,3,01/05/2010,31/12/2099,0,,
+W1/HA-099,USA - New Hampshire,White Mountains,Old Retired Peak,1500,4921,,,-71.3,44.3,4,0,01/01/2004,31/12/2015,7,03/08/2014,W1OLD
+W2/GC-001,USA - NJ / NY,Greater Catskills,Slide Mountain (duplicate),1172,3845,,,-74.3862,41.9991,10,3,01/05/2010,31/12/2099,0,,
